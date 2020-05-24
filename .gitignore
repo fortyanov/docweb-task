@@ -1,0 +1,6 @@
+docweb-task
+config.ini
+*.log
+
+# Editor directories and files
+.idea

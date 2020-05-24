@@ -1,0 +1,14 @@
+[general]
+log_level = debug
+log_destination = stderr
+log_tag = docweb-task
+pidfile = /tmp/docweb-task.pid
+
+[server]
+host = 0.0.0.0
+port = 8080
+min_upload_size = 20480
+max_upload_size = 10485760
+
+[storage]
+directory = /home/forty/Downloads/store
