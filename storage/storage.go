@@ -54,8 +54,9 @@ func Upload(formFile multipart.File, formHeader *multipart.FileHeader) (fileHash
 	}
 	fileHash = fmt.Sprintf("%x", h.Sum(nil))
 
-	if file, err = createFile(filepath.Join(config.Directory, fileHash[:2], fileHash)); err != nil {
-		return fileHash, fmt.Errorf("File '%s' creation hash error: %v", formHeader.Filename, err)
+	path := filepath.Join(config.Directory, fileHash[:2], fileHash)
+	if file, err = createFile(path); err != nil {
+		return fileHash, fmt.Errorf("File '%s' creation error: %v", formHeader.Filename, err)
 	}
 	defer file.Close()
 
@@ -70,13 +71,13 @@ func Upload(formFile multipart.File, formHeader *multipart.FileHeader) (fileHash
 func Delete(fileHash string) (err error) {
 	path := filepath.Join(config.Directory, fileHash[:2], fileHash)
 	if err = os.Remove(path); err != nil {
-		return
+		return fmt.Errorf("File '%s' delete error: %v", fileHash, err)
 	}
 
 	dir := filepath.Dir(path)
 	isEmpty, _ := dirIsEmpty(dir)
 	if isEmpty == true {
-		err = os.Remove(dir)
+		_ = os.Remove(dir)
 	}
 
 	return
@@ -84,6 +85,6 @@ func Delete(fileHash string) (err error) {
 
 func Download(fileHash string) (file *os.File, err error) {
 	path := filepath.Join(config.Directory, fileHash[:2], fileHash)
-	file, err = os.Open(filepath.Join(path))
+	file, err = os.Open(path)
 	return
 }

@@ -23,7 +23,7 @@ var (
 	errDownload        = errors.New("downloading error")
 )
 
-func Processing(handle httprouter.Handle, preCallback, postCallback func()) httprouter.Handle {
+func processing(handle httprouter.Handle, preCallback, postCallback func()) httprouter.Handle {
 	return func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		preCallback()
 		defer postCallback()

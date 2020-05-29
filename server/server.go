@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	config   *Config
-	server   *http.Server
-	ctx      context.Context
+	config *Config
+	server *http.Server
+	ctx    context.Context
 )
 
 func Init(cfg *Config) (err error) {
@@ -22,9 +22,9 @@ func Init(cfg *Config) (err error) {
 
 	router := httprouter.New()
 
-	router.POST("/", Processing(uploadHandler, uploadPreCallback, uploadPostCallback))
-	router.GET("/", Processing(downloadHandler, downloadPreCallback, downloadPostCallback))
-	router.DELETE("/", Processing(deleteHandler, deletePreCallback, deletePostCallback))
+	router.POST("/", processing(uploadHandler, uploadPreCallback, uploadPostCallback))
+	router.GET("/", processing(downloadHandler, downloadPreCallback, downloadPostCallback))
+	router.DELETE("/", processing(deleteHandler, deletePreCallback, deletePostCallback))
 
 	router.GlobalOPTIONS = http.HandlerFunc(optionsHandler)
 	router.PanicHandler = panicHandler
