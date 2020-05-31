@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"unicode"
 )
 
 type HashType int
@@ -48,4 +49,14 @@ func CalcFileHash(hashType HashType, file io.Reader) (fileHash string, err error
 	fileHash = fmt.Sprintf("%x", h.Sum(nil))
 
 	return fileHash, err
+}
+
+func IsValidHash(fileHash string) bool {
+	for _, r := range fileHash {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+			return false
+		}
+	}
+
+	return true
 }

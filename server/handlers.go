@@ -89,7 +89,7 @@ func downloadHandler(writer http.ResponseWriter, request *http.Request, params h
 
 	urlQueryValues := request.URL.Query()
 	fileHash = urlQueryValues.Get("hash")
-	if fileHash == "" {
+	if fileHash == "" || !storage.IsValidHash(fileHash) {
 		log.Warning(err)
 		JsonError(writer, errors.New(errHashFile), http.StatusBadRequest)
 		return
