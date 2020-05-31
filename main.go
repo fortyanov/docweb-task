@@ -50,11 +50,6 @@ func realMain() int {
 	}
 	defer pidfile.Unlink(cfg.General.PidFile)
 
-	if err = storage.Init(&cfg.Storage); err != nil {
-		log.Error("Initialize storage error: ", err)
-		return 1
-	}
-
 	if err = server.Init(&cfg.Server); err != nil {
 		log.Error("Initialize http server error: ", err)
 		return 1
@@ -62,6 +57,11 @@ func realMain() int {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	if err = storage.Init(ctx, &cfg.Storage); err != nil {
+		log.Error("Initialize storage error: ", err)
+		return 1
+	}
 
 	server.Run(ctx, cancel)
 	defer server.Shutdown()

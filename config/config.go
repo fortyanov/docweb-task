@@ -25,13 +25,13 @@ type General struct {
 
 func (cfg *Config) Validate() (err error) {
 	if err = cfg.Server.Validate(); err != nil {
-		return
+		return err
 	}
 	if err = cfg.Storage.Validate(); err != nil {
-		return
+		return err
 	}
 
-	return
+	return err
 }
 
 func Parse(fileName string) (*Config, error) {
@@ -50,8 +50,6 @@ func Parse(fileName string) (*Config, error) {
 			LogTag:   path.Base(os.Args[0]),
 			PidFile:  "/var/run/" + path.Base(os.Args[0]) + ".pid",
 		},
-		//Server:  server.Config{},
-		//Storage: storage.Config{},
 	}
 
 	if err = iniFile.MapTo(cfg); err != nil {

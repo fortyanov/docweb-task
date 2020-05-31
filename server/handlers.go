@@ -14,15 +14,6 @@ import (
 	"docweb-task/storage"
 )
 
-var (
-	errFormFile        = errors.New("incorrect request file")
-	errRequestBodySize = errors.New("too large body")
-	errUpload          = errors.New("uploading error")
-	errHashFile        = errors.New("incorrect get parameter hash")
-	errDelete          = errors.New("deleting error")
-	errDownload        = errors.New("downloading error")
-)
-
 func processing(handle httprouter.Handle, preCallback, postCallback func()) httprouter.Handle {
 	return func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		preCallback()
@@ -33,26 +24,32 @@ func processing(handle httprouter.Handle, preCallback, postCallback func()) http
 
 func uploadHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 	var (
-		err        error
-		formFile   multipart.File
-		formHeader *multipart.FileHeader
-		fileHash   string
+		err          error
+		formHashType storage.HashType
+		formFile     multipart.File
+		formHeader   *multipart.FileHeader
+		fileHash     string
 	)
 
 	if request.ContentLength < config.MinUploadSize || request.ContentLength > config.MaxUploadSize {
-		JsonError(writer, errRequestBodySize, http.StatusBadRequest)
+		JsonError(writer, errors.New(errRequestBodySize), http.StatusBadRequest)
+		return
+	}
+	var ok bool
+	if formHashType, ok = storage.MapHashType[request.FormValue("hash-type")]; !ok {
+		JsonError(writer, errors.New(errHashType), http.StatusBadRequest)
 		return
 	}
 	if formFile, formHeader, err = request.FormFile("file"); err != nil {
 		log.Warning(err)
-		JsonError(writer, errFormFile, http.StatusBadRequest)
+		JsonError(writer, errors.New(errFormFile), http.StatusBadRequest)
 		return
 	}
 	defer formFile.Close()
 
-	if fileHash, err = storage.Upload(formFile, formHeader); err != nil {
+	if fileHash, err = storage.Upload(formHashType, formFile, formHeader); err != nil {
 		log.Warning(err)
-		JsonError(writer, errUpload, http.StatusBadRequest)
+		JsonError(writer, errors.New(errUpload), http.StatusBadRequest)
 		return
 	}
 
@@ -69,13 +66,13 @@ func deleteHandler(writer http.ResponseWriter, request *http.Request, params htt
 	fileHash = urlQueryValues.Get("hash")
 	if fileHash == "" {
 		log.Warning(err)
-		JsonError(writer, errHashFile, http.StatusBadRequest)
+		JsonError(writer, errors.New(errHashFile), http.StatusBadRequest)
 		return
 	}
 
 	if err = storage.Delete(fileHash); err != nil {
 		log.Warning(err)
-		JsonError(writer, errDelete, http.StatusBadRequest)
+		JsonError(writer, errors.New(errDelete), http.StatusBadRequest)
 		return
 	}
 
@@ -84,30 +81,45 @@ func deleteHandler(writer http.ResponseWriter, request *http.Request, params htt
 
 func downloadHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 	var (
-		err      error
-		fileHash string
-		file     *os.File
+		err          error
+		fileHash     string
+		fileHashType storage.HashType
+		file         *os.File
 	)
 
 	urlQueryValues := request.URL.Query()
 	fileHash = urlQueryValues.Get("hash")
 	if fileHash == "" {
 		log.Warning(err)
-		JsonError(writer, errHashFile, http.StatusBadRequest)
+		JsonError(writer, errors.New(errHashFile), http.StatusBadRequest)
+		return
+	}
+	var ok bool
+	if fileHashType, ok = storage.MapHashType[urlQueryValues.Get("hash-type")]; !ok {
+		log.Warning(err)
+		JsonError(writer, errors.New(errHashType), http.StatusBadRequest)
 		return
 	}
 
 	if file, err = storage.Download(fileHash); err != nil {
 		log.Warning(err)
-		JsonError(writer, errDownload, http.StatusBadRequest)
+		JsonError(writer, errors.New(errDownload), http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
 
+	var calculatedFileHash string
+	calculatedFileHash, err = storage.CalcFileHash(fileHashType, file)
+	if fileHash != calculatedFileHash {
+		log.Warning(err)
+		JsonError(writer, errors.New(errCorruptedFile), http.StatusBadRequest)
+		return
+	}
+
 	writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileHash))
 	if _, err = io.Copy(writer, file); err != nil {
 		log.Warning(err)
-		JsonError(writer, errDownload, http.StatusBadRequest)
+		JsonError(writer, errors.New(errDownload), http.StatusBadRequest)
 	}
 
 	return

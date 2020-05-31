@@ -3,6 +3,7 @@
 ```bash
 curl --location --request POST 'http://127.0.0.1:8080/' \
    --header 'Content-Type: multipart/form-data' \
+   --form 'hash-type=md5' \
    --form 'file=@/home/forty/Downloads/audio.wav'
 ```
 
@@ -13,5 +14,5 @@ curl --location --request GET 'http://127.0.0.1:8080/?hash=1257cfb4e5ac35d5c32f5
 
 ## Delete
 ```bash
-curl --location --request DELETE 'http://127.0.0.1:8080/?hash=1257cfb4e5ac35d5c32f5103691321001775609b'
+curl --location --request DELETE 'http://127.0.0.1:8080/?hash-type=md5&hash=1257cfb4e5ac35d5c32f5103691321001775609b'
 ```
